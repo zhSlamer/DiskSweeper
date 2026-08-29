@@ -89,40 +89,61 @@ function compare(a: FileRow, b: FileRow, key: SortKey): number {
   }
 }
 
+interface FilterCache {
+  key: string
+  rows: FileRow[]
+  totalBytes: number
+}
+let filterCache: FilterCache | null = null
+
+function cacheKey(scanId: number, c: FilterConditions, sortKey: SortKey, order: 'asc' | 'desc'): string {
+  // JSON.stringify 键序由构造方决定，同对象序列化稳定；附加时间桶避免长时间挂起后日期条件失真
+  const timeBucket = c.dateDays !== undefined && c.dateDays > 0 ? Math.floor(Date.now() / 3600000) : 0
+  return JSON.stringify([scanId, c, sortKey, order, timeBucket])
+}
+
 export function runFilter(q: FilterQuery): FilterPage {
   const st = requireScan(q.scanId)
   const c = q.conditions
-  const now = Date.now()
-  const emptyDirs = c.emptyDirs === true
+  const key = cacheKey(q.scanId, c, q.sort.key, q.sort.order)
 
   let rows: FileRow[]
-  if (emptyDirs) {
-    rows = []
-    for (const agg of st.dirs.values()) {
-      if (agg.p === st.root) continue
-      if (matchEmptyDir(agg, st, c)) {
-        rows.push({
-          id: -1 - rows.length,
-          p: agg.p,
-          n: agg.name,
-          ext: '',
-          s: 0,
-          sd: 0,
-          mt: agg.mt,
-          ct: 0,
-          at: 0,
-          f: 0,
-          dir: 1
-        })
-      }
-    }
+  let totalBytes: number
+  if (filterCache && filterCache.key === key) {
+    // 命中缓存：翻页不再重新过滤/排序（缓存只保存过滤结果的引用，无额外大内存）
+    rows = filterCache.rows
+    totalBytes = filterCache.totalBytes
   } else {
-    rows = st.files.filter((f) => matchFile(f, c, now))
+    const now = Date.now()
+    const emptyDirs = c.emptyDirs === true
+    if (emptyDirs) {
+      rows = []
+      for (const agg of st.dirs.values()) {
+        if (agg.p === st.root) continue
+        if (matchEmptyDir(agg, st, c)) {
+          rows.push({
+            id: -1 - rows.length,
+            p: agg.p,
+            n: agg.name,
+            ext: '',
+            s: 0,
+            sd: 0,
+            mt: agg.mt,
+            ct: 0,
+            at: 0,
+            f: 0,
+            dir: 1
+          })
+        }
+      }
+    } else {
+      rows = st.files.filter((f) => matchFile(f, c, now))
+    }
+    totalBytes = rows.reduce((acc, r) => acc + r.s, 0)
+    const dir = q.sort.order === 'asc' ? 1 : -1
+    rows.sort((a, b) => compare(a, b, q.sort.key) * dir)
+    filterCache = { key, rows, totalBytes }
   }
-
-  const totalBytes = rows.reduce((acc, r) => acc + r.s, 0)
-  const dir = q.sort.order === 'asc' ? 1 : -1
-  rows.sort((a, b) => compare(a, b, q.sort.key) * dir)
 
   const pageSize = Math.max(10, Math.min(q.pageSize, 1000))
   const page = Math.max(0, q.page)
@@ -134,14 +155,20 @@ export function runFilter(q: FilterQuery): FilterPage {
   }
 }
 
+/** 扫描结束后使缓存失效（scanId 单调递增，key 已含 scanId，此处仅为内存释放） */
+export function invalidateFilterCache(): void {
+  filterCache = null
+}
+
 export interface ExportArgs {
   scanId: number
   conditions: FilterConditions
+  sort?: { key: SortKey; order: 'asc' | 'desc' }
   limit?: number
 }
 
-/** 导出筛选结果（渲染进程先写临时文件再让用户保存，这里直接返回文本） */
-export function exportRows(args: ExportArgs, format: 'csv' | 'json'): { text: string; count: number } {
+/** 导出筛选结果（主进程 dialog 已确定保存路径后调用） */
+export function exportRows(args: ExportArgs, format: 'csv' | 'json'): { text: string; count: number; total: number } {
   const st = requireScan(args.scanId)
   const now = Date.now()
   const c = args.conditions
@@ -170,8 +197,11 @@ export function exportRows(args: ExportArgs, format: 'csv' | 'json'): { text: st
   } else {
     rows = st.files.filter((f) => matchFile(f, c, now))
   }
-  rows.sort((a, b) => b.s - a.s)
-  const limit = Math.min(args.limit ?? 50000, rows.length)
+  const total = rows.length
+  const sortSpec = args.sort ?? { key: 'size' as SortKey, order: 'desc' as const }
+  const dir = sortSpec.order === 'asc' ? 1 : -1
+  rows.sort((a, b) => compare(a, b, sortSpec.key) * dir)
+  const limit = Math.min(args.limit ?? 100000, rows.length)
   rows = rows.slice(0, limit)
 
   if (format === 'json') {
@@ -182,7 +212,7 @@ export function exportRows(args: ExportArgs, format: 'csv' | 'json'): { text: st
       mtime: new Date(r.mt).toISOString(),
       type: r.dir ? 'dir' : 'file'
     }))
-    return { text: JSON.stringify(data, null, 2), count: rows.length }
+    return { text: JSON.stringify(data, null, 2), count: rows.length, total }
   }
   const esc = (s: string): string => '"' + s.replace(/"/g, '""') + '"'
   const lines = ['路径,名称,大小字节,类型,修改时间']
@@ -191,7 +221,7 @@ export function exportRows(args: ExportArgs, format: 'csv' | 'json'): { text: st
       [esc(r.p), esc(r.n), String(r.s), r.dir ? '文件夹' : '文件', esc(new Date(r.mt).toLocaleString())].join(',')
     )
   }
-  return { text: '\ufeff' + lines.join('\r\n'), count: rows.length }
+  return { text: '\ufeff' + lines.join('\r\n'), count: rows.length, total }
 }
 
 /** 把文本写到用户指定位置（主进程 dialog 已确定路径后调用） */

@@ -18,6 +18,7 @@ export default function Dashboard(): React.ReactElement {
   const [loading, setLoading] = useState(false)
   const summary = useApp((s) => s.summary)
   const setPage = useApp((s) => s.setPage)
+  const requestAnalyze = useApp((s) => s.requestAnalyze)
   const { message } = AntApp.useApp()
 
   const refresh = (): void => {
@@ -60,8 +61,8 @@ export default function Dashboard(): React.ReactElement {
                 size="small"
                 hoverable
                 onClick={() => {
+                  requestAnalyze(d.letter + '\\')
                   setPage('analyzer')
-                  window.dispatchEvent(new CustomEvent('ds:analyze-drive', { detail: d.letter + '\\' }))
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>

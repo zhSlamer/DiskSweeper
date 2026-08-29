@@ -20,9 +20,11 @@ import type { DupGroup } from '../../shared/types'
 import { formatBytes, formatTime } from '../../shared/utils'
 import { isProtectedPath } from '../../shared/constants'
 import { api } from '../api'
+import { useApp } from '../stores/app'
 
 export default function Duplicates(): React.ReactElement {
   const { message, modal } = AntApp.useApp()
+  const settings = useApp((s) => s.settings)
   const [root, setRoot] = useState('')
   const [minSize, setMinSize] = useState(1024 * 1024)
   const [phase, setPhase] = useState<'idle' | 'running' | 'done'>('idle')
@@ -134,7 +136,7 @@ export default function Duplicates(): React.ReactElement {
     const hasProtected = paths.some((p) => isProtectedPath(p))
     modal.confirm({
       title: mode === 'recycle' ? '删除勾选的重复文件到回收站？' : '永久删除勾选的重复文件？（无法恢复）',
-      content: `共 ${paths.length} 个文件，释放 ${formatBytes(selectedBytes)}` + (hasProtected ? '（含系统关键路径！）' : ''),
+      content: `共 ${paths.length} 个文件，释放 ${formatBytes(selectedBytes)}` + (hasProtected && (settings?.confirmProtected ?? true) ? '（含系统关键路径！）' : ''),
       okText: '确定',
       okButtonProps: { danger: mode === 'permanent' },
       cancelText: '取消',

@@ -60,7 +60,10 @@ export function registerIpc(): void {
   ipcMain.handle(CH.drivesList, () => drives.listDrives())
 
   /* 扫描 */
-  ipcMain.handle(CH.scanStart, (_e, root: string) => scanner.startScan(root))
+  ipcMain.handle(CH.scanStart, (_e, root: string) => {
+    filterEngine.invalidateFilterCache() // 释放上一次扫描的筛选缓存引用，允许旧数据被回收
+    return scanner.startScan(root)
+  })
   ipcMain.handle(CH.scanCancel, () => scanner.cancelScan())
 
   /* 空间分析 */
@@ -91,12 +94,12 @@ export function registerIpc(): void {
             : [{ name: 'JSON', extensions: ['json'] }]
       })
       if (target.canceled || !target.filePath) return { ok: false, count: 0 }
-      const { text, count } = filterEngine.exportRows(
-        { scanId: args.query.scanId, conditions: args.query.conditions },
+      const { text, count, total } = filterEngine.exportRows(
+        { scanId: args.query.scanId, conditions: args.query.conditions, sort: args.query.sort },
         args.format
       )
       await filterEngine.writeExportFile(target.filePath, text)
-      return { ok: true, count, path: target.filePath }
+      return { ok: true, count, total, path: target.filePath }
     }
   )
 

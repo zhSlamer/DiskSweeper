@@ -67,7 +67,7 @@ export default function History(): React.ReactElement {
                 </Space>
                 <Table<HistoryEntry>
                   size="small"
-                  rowKey={(r) => r.t + r.action + r.count}
+                  rowKey={(_r, i) => `op-${i}`}
                   dataSource={ops}
                   locale={{ emptyText: <Empty description="暂无操作记录" /> }}
                   columns={[

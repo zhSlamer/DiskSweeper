@@ -115,8 +115,9 @@ function finish(st: ScanState, cancelled: boolean): void {
   }
   st.status = cancelled ? 'cancelled' : 'done'
   st.elapsedMs = Date.now() - st.startedAt
+  st.pendingSelf.clear()
   for (const w of st.workers) {
-    w.terminate().catch(() => {})
+    void w.terminate().catch(() => {})
   }
   // 构建父子索引
   const children = new Map<string, TreeChild[]>()

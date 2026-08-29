@@ -25,21 +25,35 @@ function runPowerShell(script: string, timeoutMs = 120000): Promise<string> {
   })
 }
 
-/** 通过 Shell.Application 移入回收站（逐个调用，返回是否全部成功） */
+/** 通过 Shell.Application 批量移入回收站（单个 PowerShell 会话处理全部路径） */
 async function recycleViaShell(paths: string[]): Promise<{ ok: number; fail: number }> {
   let ok = 0
   let fail = 0
-  for (const p of paths) {
+  const BATCH = 200
+  for (let start = 0; start < paths.length; start += BATCH) {
+    const batch = paths.slice(start, start + BATCH)
+    // 每个路径一条语句：存在则请求删除并输出 Y，否则输出 N（每行一个标记字符）
+    const lines = batch.map((p) => {
+      const escaped = p.replace(/'/g, "''")
+      return (
+        `$item = $sh.Namespace(0).ParseName('${escaped}'); ` +
+        `if ($item) { $item.InvokeVerb('delete'); 'Y' } else { 'N' }`
+      )
+    })
     const script =
       "$sh = New-Object -ComObject 'Shell.Application'; " +
-      `$item = $sh.Namespace(0).ParseName('${p.replace(/'/g, "''")}'); ` +
-      'if ($item) { $item.InvokeVerb(\'delete\'); \'OK\' } else { \'MISS\' }'
+      "$ErrorActionPreference='SilentlyContinue'; " +
+      lines.join('\n')
     try {
-      const out = await runPowerShell(script, 30000)
-      if (out.includes('OK') || out.includes('MISS')) ok++
-      else fail++
+      const out = await runPowerShell(script, Math.max(60000, batch.length * 2000))
+      // InvokeVerb 是异步触发的，Y 只代表"文件存在且已请求删除"
+      ok += (out.match(/^Y$/gm) ?? []).length
+      fail += (out.match(/^N$/gm) ?? []).length
+      // 输出行数不足时（脚本被截断等），按批次大小与已计数差额补 fail
+      const counted = (out.match(/^[YN]$/gm) ?? []).length
+      if (counted < batch.length) fail += batch.length - counted
     } catch {
-      fail++
+      fail += batch.length
     }
   }
   return { ok, fail }
@@ -78,7 +92,6 @@ async function shredFile(p: string, isDir: boolean): Promise<void> {
     const size = st.size
     const chunk = Buffer.alloc(1024 * 1024)
     for (let pass = 0; pass < SHRED_PASSES; pass++) {
-      await fh.write(Buffer.alloc(chunk.length, pass % 2 === 0 ? 0x00 : 0xff), 0)
       let pos = 0
       while (pos < size) {
         const len = Math.min(chunk.length, size - pos)

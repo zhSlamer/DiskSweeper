@@ -48,7 +48,7 @@ export const api = {
 
   filterQuery: (q: FilterQuery) => inv<FilterPage>(CH.filterQuery, q),
   filterExport: (query: FilterQuery, format: 'csv' | 'json') =>
-    inv<{ ok: boolean; count: number; path?: string }>(CH.filterExport, { query, format }),
+    inv<{ ok: boolean; count: number; total?: number; path?: string }>(CH.filterExport, { query, format }),
 
   dupStart: (root: string, minSize?: number) => inv<void>(CH.dupStart, { root, minSize }),
   dupCancel: () => inv<boolean>(CH.dupCancel),

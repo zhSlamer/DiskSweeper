@@ -29,6 +29,11 @@ interface AppState {
   settings: AppSettings | null
   loadSettings: () => Promise<void>
   updateSettings: (patch: Partial<AppSettings>) => Promise<void>
+
+  /** 仪表盘请求分析某个磁盘/目录（跨页面传递，避免挂载时序丢事件） */
+  pendingAnalyze: { root: string; ts: number } | null
+  requestAnalyze: (root: string) => void
+  consumeAnalyze: () => void
 }
 
 export const useApp = create<AppState>((set, get) => ({
@@ -72,5 +77,9 @@ export const useApp = create<AppState>((set, get) => ({
   updateSettings: async (patch) => {
     const s = await api.setSettings(patch)
     set({ settings: s })
-  }
+  },
+
+  pendingAnalyze: null,
+  requestAnalyze: (root) => set({ pendingAnalyze: { root, ts: Date.now() } }),
+  consumeAnalyze: () => set({ pendingAnalyze: null })
 }))

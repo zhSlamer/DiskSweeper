@@ -60,7 +60,9 @@ export default function SmartFilter(): React.ReactElement {
   })
   const [result, setResult] = useState<FilterPage | null>(null)
   const [loading, setLoading] = useState(false)
-  const [selected, setSelected] = useState<FileRow[]>([])
+  // 以 Map 保存跨页选择：翻页不丢已勾选行
+  const [selectedMap, setSelectedMap] = useState<Map<string, FileRow>>(new Map())
+  const selected = useMemo(() => [...selectedMap.values()], [selectedMap])
   const [propsRow, setPropsRow] = useState<FileRow | null>(null)
 
   useEffect(() => {
@@ -81,11 +83,13 @@ export default function SmartFilter(): React.ReactElement {
   )
 
   useEffect(() => {
-    setSelected([])
+    setSelectedMap(new Map())
     setPageIdx(0)
     query(0, pageSize, sort)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scanId, conds])
+
+  const clearSelected = (): void => setSelectedMap(new Map())
 
   const runPreset = (key: string): void => {
     const p = PRESETS.find((x) => x.key === key)
@@ -98,6 +102,7 @@ export default function SmartFilter(): React.ReactElement {
   }
 
   /* ---------- 批量操作 ---------- */
+  const settings = useApp((s) => s.settings)
   const selectedPaths = selected.map((r) => r.p)
   const selectedBytes = selected.reduce((a, r) => a + r.s, 0)
   const hasProtected = selectedPaths.some((p) => isProtectedPath(p))
@@ -116,7 +121,7 @@ export default function SmartFilter(): React.ReactElement {
           <p>
             共 <b>{selectedPaths.length}</b> 项，{kind === 'recycle' ? '大小' : '释放'} {formatBytes(selectedBytes)}
           </p>
-          {hasProtected && danger && (
+          {hasProtected && danger && (settings?.confirmProtected ?? true) && (
             <Alert
               type="error"
               showIcon
@@ -141,7 +146,7 @@ export default function SmartFilter(): React.ReactElement {
         .delete(selectedPaths, kind, force)
         .then((r) => {
           void message.success(`完成：成功 ${r.ok}，失败 ${r.fail}`)
-          setSelected([])
+          clearSelected()
           query()
         })
         .catch((e) => void message.error(String(e instanceof Error ? e.message : e)))
@@ -174,7 +179,7 @@ export default function SmartFilter(): React.ReactElement {
             .move(selectedPaths, dest)
             .then((r) => {
               void message.success(`移动完成：成功 ${r.ok}，失败 ${r.fail}`)
-              setSelected([])
+              clearSelected()
               query()
             })
             .finally(() => resolve())
@@ -188,7 +193,7 @@ export default function SmartFilter(): React.ReactElement {
       .quarantine(selectedPaths)
       .then((r) => {
         void message.success(`已隔离 ${r.ok} 项，可在"安全中心"恢复`)
-        setSelected([])
+        clearSelected()
         query()
       })
       .catch((e) => void message.error(String(e)))
@@ -199,7 +204,14 @@ export default function SmartFilter(): React.ReactElement {
     api
       .filterExport({ scanId, conditions: conds, sort, page: 0, pageSize }, format)
       .then((r) => {
-        if (r.ok) void message.success(`已导出 ${r.count} 行`)
+        if (r.ok) {
+          const total = r.total ?? r.count
+          if (r.count < total) {
+            void message.info(`结果共 ${total.toLocaleString()} 行，超出导出上限，已导出按当前排序的前 ${r.count.toLocaleString()} 行`)
+          } else {
+            void message.success(`已导出 ${r.count.toLocaleString()} 行`)
+          }
+        }
       })
       .catch((e) => void message.error(String(e)))
   }
@@ -306,8 +318,18 @@ export default function SmartFilter(): React.ReactElement {
                 rowKey="p"
                 dataSource={result?.rows ?? []}
                 rowSelection={{
-                  selectedRowKeys: selected.map((r) => r.p),
-                  onChange: (_keys, rows) => setSelected(rows)
+                  selectedRowKeys: [...selectedMap.keys()],
+                  onChange: (keys, rows) => {
+                    setSelectedMap((prev) => {
+                      const next = new Map(prev)
+                      const keySet = new Set(keys.map(String))
+                      // 移除已取消勾选的（包括其它页的）
+                      for (const k of [...next.keys()]) if (!keySet.has(k)) next.delete(k)
+                      // 当前页数据以最新行对象更新；其它页保留原有行对象
+                      for (const r of rows) next.set(r.p, r)
+                      return next
+                    })
+                  }
                 }}
                 onRow={(r) => ({ onClick: () => setPropsRow(r), style: { cursor: 'pointer' } })}
                 onChange={(_pg, _fil, sorter) => {

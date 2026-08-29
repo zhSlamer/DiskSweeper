@@ -48,23 +48,22 @@ export default function Analyzer(): React.ReactElement {
   const [root, setRoot] = useState('')
   const [propsRow, setPropsRow] = useState<FileRow | null>(null)
   const [curDir, setCurDir] = useState('')
+  const pendingAnalyze = useApp((s) => s.pendingAnalyze)
+  const consumeAnalyze = useApp((s) => s.consumeAnalyze)
 
   // 每次拿到扫描结果重置当前目录
   useEffect(() => {
     if (scanId && summary) setCurDir(summary.root)
   }, [scanId, summary])
 
-  // 仪表盘快捷入口预填盘符
+  // 仪表盘磁盘卡片等入口的跨页请求
   useEffect(() => {
-    const h = (e: Event): void => {
-      const detail = (e as CustomEvent).detail as string
-      setRoot(detail)
-      void beginScan(detail).catch((err) => void message.error(String(err)))
-    }
-    window.addEventListener('ds:analyze-drive', h)
-    return () => window.removeEventListener('ds:analyze-drive', h)
+    if (!pendingAnalyze) return
+    setRoot(pendingAnalyze.root)
+    consumeAnalyze()
+    beginScan(pendingAnalyze.root).catch((err) => void message.error(String(err instanceof Error ? err.message : err)))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [pendingAnalyze])
 
   const browse = async (): Promise<void> => {
     const dir = await api.openDirDialog(root || undefined)

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { App as AntApp, Button, Card, Empty, Form, Input, Select, Space, Typography, Tag } from 'antd'
+import { App as AntApp, Button, Card, Empty, Form, Input, Select, Space, Switch, Typography } from 'antd'
 import type { DeleteMode } from '../../shared/types'
 import { DEFAULT_EXCLUDES } from '../../shared/constants'
 import { useApp } from '../stores/app'
@@ -74,13 +74,14 @@ export default function Settings(): React.ReactElement {
       <Card size="small" title="安全" style={{ marginBottom: 12 }}>
         <Space direction="vertical">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span>系统关键目录二次确认</span>
-            <Tag color={settings.confirmProtected ? 'green' : 'red'}>
-              {settings.confirmProtected ? '已开启' : '已关闭（危险）'}
-            </Tag>
+            <span>系统关键目录额外警告</span>
+            <Switch
+              checked={settings.confirmProtected}
+              onChange={(v) => void updateSettings({ confirmProtected: v })}
+            />
           </div>
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            对 Windows、Program Files、ProgramData 等目录内容执行永久删除/粉碎时，始终弹出高风险确认。
+            开启后，对 Windows、Program Files、ProgramData 等目录内容执行永久删除/粉碎时，确认框中会额外显示高风险警告。普通删除确认始终存在。
           </Typography.Text>
         </Space>
       </Card>
