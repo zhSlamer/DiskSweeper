@@ -22,40 +22,26 @@ DiskSweeper（磁盘清理专家）是一款运行在 Windows 上的开源桌面
 
 ## 🖼️ 界面预览
 
-### 仪表盘
-所有磁盘分区使用总览，一键直达各功能模块。
+<table>
+  <tr>
+    <td width="50%" align="center"><b>仪表盘</b><br/><sub>磁盘分区总览 · 快捷入口</sub><br/><img src="docs/screenshots/01-dashboard.png" width="100%"/></td>
+    <td width="50%" align="center"><b>空间分析</b><br/><sub>矩形树图下钻 · 类型分布 · 大文件榜 · 属性面板</sub><br/><img src="docs/screenshots/02-analyzer.png" width="100%"/></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><b>智能筛选</b><br/><sub>一键预设 + 自定义条件 · 批量清理 · 导出清单</sub><br/><img src="docs/screenshots/03-filter.png" width="100%"/></td>
+    <td width="50%" align="center"><b>重复文件查找</b><br/><sub>三级哈希检测 · 智能保留策略 · 每组至少留一份</sub><br/><img src="docs/screenshots/04-duplicates.png" width="100%"/></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><b>垃圾清理</b><br/><sub>10 类常见垃圾位置 · 安全等级 · 清理日志</sub><br/><img src="docs/screenshots/05-junk.png" width="100%"/></td>
+    <td width="50%" align="center"><b>安全中心</b><br/><sub>操作记录 · 隔离区可恢复</sub><br/><img src="docs/screenshots/06-history.png" width="100%"/></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><b>设置</b><br/><sub>默认删除方式 · 排除目录</sub><br/><img src="docs/screenshots/07-settings.png" width="100%"/></td>
+    <td width="50%" align="center"></td>
+  </tr>
+</table>
 
-![仪表盘](docs/screenshots/01-dashboard.png)
-
-### 空间分析
-多线程扫描任意目录/磁盘，矩形树图点击下钻、按扩展名的类型分布饼图、目录树、大文件 Top 榜；点击任意文件可查看完整属性（实际大小/磁盘占用、创建/修改/访问时间、只读/隐藏/系统属性等）并支持在资源管理器中定位。
-
-![空间分析](docs/screenshots/02-analyzer.png)
-
-### 智能筛选
-15 种一键预设（大文件、N 年未访问、空文件、空文件夹、临时/残留文件、视频/音频/图片/压缩包/安装包/文档/日志/代码等），也可自由组合条件：大小范围、扩展名、时间字段与天数、文件名（包含/通配符/正则）、文件属性。结果支持排序、批量操作（回收站 / 隔离 / 移动 / 永久删除 / 粉碎）与 CSV / JSON 导出。
-
-![智能筛选](docs/screenshots/03-filter.png)
-
-### 重复文件查找
-三级检测流水线：**按大小分组 → 头 64KB 部分哈希 → 全量 SHA-256**，快速且准确。支持"保留最新/最旧/第一个"的智能勾选，每组硬性保证至少保留一份。
-
-![重复文件](docs/screenshots/04-duplicates.png)
-
-### 垃圾清理
-内置 10 类常见垃圾位置：用户/系统临时文件、Prefetch 预读、缩略图缓存、Chrome / Edge 浏览器缓存、回收站、Windows 更新下载缓存、崩溃转储、DirectX 着色器缓存。逐项估算占用、标注安全等级、输出清理日志。
-
-![垃圾清理](docs/screenshots/05-junk.png)
-
-### 安全中心
-所有删除 / 移动 / 隔离操作均有完整记录；"隔离"模式把不确定的文件移入应用隔离区，随时可一键恢复原位。
-
-![安全中心](docs/screenshots/06-history.png)
-
-### 设置
-默认删除方式、扫描排除目录（支持目录名与完整路径两种写法）、系统关键目录二次确认开关。
-
-![设置](docs/screenshots/07-settings.png)
+> 更多细节：空间分析中点击任意文件可查看完整属性（实际大小/磁盘占用、创建/修改/访问时间、只读/隐藏/系统属性等）；筛选结果可一键定位到资源管理器所在位置。
 
 ## 🚀 快速开始
 
@@ -176,6 +162,34 @@ DiskSweeper/
 - [ ] 相似图片检测（感知哈希）
 - [ ] 多语言（英文界面）
 - [ ] 自动更新（electron-updater）
+
+## 📝 更新日志
+
+### v1.0.1（2026-08-29）
+
+**修复**
+
+- 打开文件行为修正：文件属性抽屉的主按钮改为「打开所在位置」，点击后直接在资源管理器中定位该文件，不再用默认程序打开文件（此前筛选到 exe 等文件时会被直接运行）
+- 可执行文件运行确认：「打开文件」对 exe / msi / bat 等可执行文件增加二次确认，避免误运行
+- 智能筛选结果表与空间分析大文件榜新增定位操作列，一键打开文件所在文件夹
+
+下载：[v1.0.1 Release](https://github.com/zhSlamer/DiskSweeper/releases/tag/v1.0.1)
+
+### v1.0.0（2026-08-29）
+
+首个版本。
+
+**功能**
+
+- **仪表盘**：全部磁盘分区使用总览（总量/已用/剩余/进度条）、快捷入口、上次扫描摘要
+- **空间分析**：多线程扫描（实时进度、可取消、自动跳过无权限目录）、矩形树图下钻、目录树、按扩展名类型分布饼图、大文件 Top 200、文件属性面板（实际大小/磁盘占用、三种时间、只读/隐藏/系统/符号链接属性、资源管理器定位）
+- **智能筛选**：15 种一键预设（大文件 / 1 年未访问 / 空文件 / 空文件夹 / 临时残留 / 视频 / 音频 / 图片 / 压缩包 / 安装包 / 文档 / 日志 / 代码等）+ 自定义组合条件（大小、扩展名、时间、文件名包含/通配符/正则、文件属性），批量删除到回收站 / 隔离 / 移动 / 永久删除 / 粉碎，CSV / JSON 导出
+- **重复文件查找**：大小 → 头 64KB 部分哈希 → 全量 SHA-256 三级检测，智能保留策略（最新/最旧/第一个），每组硬性至少保留一份
+- **垃圾清理**：10 类 Windows 垃圾位置（用户/系统 Temp、Prefetch、缩略图缓存、Chrome/Edge 缓存、回收站、Windows 更新缓存、崩溃转储、着色器缓存），逐项估算、安全等级标注、清理日志
+- **安全中心**：完整操作历史、隔离区（可一键恢复）、系统关键目录强制二次确认
+- **设置**：默认删除方式、扫描排除目录（目录名/完整路径）
+
+下载：[v1.0.0 Release](https://github.com/zhSlamer/DiskSweeper/releases/tag/v1.0.0)
 
 ## 📄 许可证
 
