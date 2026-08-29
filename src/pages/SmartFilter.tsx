@@ -29,7 +29,8 @@ import {
   DeleteOutlined,
   ExportOutlined,
   ThunderboltOutlined,
-  SafetyCertificateOutlined
+  SafetyCertificateOutlined,
+  AimOutlined
 } from '@ant-design/icons'
 import type { FileCategory, FileRow, FilterConditions, FilterPage } from '../../shared/types'
 import { PRESETS, CATEGORY_EXTS, CATEGORY_LABELS, isProtectedPath } from '../../shared/constants'
@@ -357,6 +358,22 @@ export default function SmartFilter(): React.ReactElement {
                       <span className="mono" style={{ color: 'rgba(255,255,255,0.4)' }}>
                         {p.slice(0, Math.max(p.lastIndexOf('\\'), p.lastIndexOf('/')))}
                       </span>
+                    )
+                  },
+                  {
+                    title: '操作',
+                    width: 64,
+                    render: (_v: unknown, r: FileRow) => (
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={<AimOutlined />}
+                        title="打开所在位置"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          void api.reveal(r.p)
+                        }}
+                      />
                     )
                   }
                 ]}

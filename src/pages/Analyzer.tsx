@@ -17,7 +17,7 @@ import {
   Tabs,
   Typography
 } from 'antd'
-import { FolderOpenOutlined, SearchOutlined, StopOutlined, FileOutlined, FolderOutlined } from '@ant-design/icons'
+import { FolderOpenOutlined, SearchOutlined, StopOutlined, FileOutlined, FolderOutlined, AimOutlined } from '@ant-design/icons'
 import type { ExtStat, FileRow, TreeChild, TreeMapNode } from '../../shared/types'
 import { formatBytes, formatTime, extLabel } from '../../shared/utils'
 import { CATEGORY_COLORS, categoryOfExt } from '../../shared/constants'
@@ -443,7 +443,23 @@ function TopFiles({ scanId, onProps }: { scanId: number; onProps: (r: FileRow) =
           )
         },
         { title: '大小', dataIndex: 's', width: 110, render: (v: number) => formatBytes(v), defaultSortOrder: 'descend' },
-        { title: '修改时间', dataIndex: 'mt', width: 140, render: (v: number) => formatTime(v) }
+        { title: '修改时间', dataIndex: 'mt', width: 140, render: (v: number) => formatTime(v) },
+        {
+          title: '操作',
+          width: 64,
+          render: (_v: unknown, r: FileRow) => (
+            <Button
+              type="text"
+              size="small"
+              icon={<AimOutlined />}
+              title="打开所在位置"
+              onClick={(e) => {
+                e.stopPropagation()
+                void api.reveal(r.p)
+              }}
+            />
+          )
+        }
       ]}
       pagination={{ pageSize: 50, size: 'small' }}
     />
