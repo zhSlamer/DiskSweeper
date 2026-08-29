@@ -1,0 +1,72 @@
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family:
+    'Segoe UI',
+    -apple-system,
+    'Microsoft YaHei',
+    sans-serif;
+  overflow: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.page {
+  padding: 16px 20px;
+  height: 100%;
+  overflow: auto;
+  box-sizing: border-box;
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.page-sub {
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+
+.mono {
+  font-family: 'Cascadia Mono', Consolas, monospace;
+  font-size: 12px;
+}
+
+.ellipsis-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+
+.ellipsis-cell > span {
+  direction: ltr;
+  unicode-bidi: bidi-override;
+}
