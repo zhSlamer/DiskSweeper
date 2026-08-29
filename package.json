@@ -1,6 +1,6 @@
 {
   "name": "disk-sweeper",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "磁盘清理专家 DiskSweeper - 文件筛选与清理工具",
   "main": "./out/main/index.js",
   "author": "zcode",

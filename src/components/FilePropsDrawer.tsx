@@ -26,9 +26,11 @@ export default function FilePropsDrawer({
   const flags = flagLabels(row.f, row.n.startsWith('.'))
   const isExecutable = EXECUTABLE_EXTS.has(row.ext)
 
-  /** 打开所在文件夹（资源管理器中定位） */
+  /** 打开所在文件夹（资源管理器中定位）；文件不存在时给出提示 */
   const reveal = (): void => {
-    void api.reveal(row.p)
+    void api.reveal(row.p).then((ok) => {
+      if (!ok) void message.warning('文件不存在或已变化，请重新扫描后再试')
+    })
   }
 
   /** 打开文件本身；可执行文件先确认 */

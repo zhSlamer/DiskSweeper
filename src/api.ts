@@ -64,7 +64,7 @@ export const api = {
   move: (paths: string[], dest: string) => inv<OpResult>(CH.opsMove, { paths, dest }),
   quarantine: (paths: string[]) => inv<OpResult>(CH.opsQuarantine, { paths }),
   restore: (id: string) => inv<boolean>(CH.opsRestore, id),
-  reveal: (p: string) => inv<void>(CH.opsReveal, p),
+  reveal: (p: string) => inv<boolean>(CH.opsReveal, p),
   open: (p: string) => inv<void>(CH.opsOpen, p),
   copyPath: (p: string) => inv<void>(CH.opsClipboard, p),
   onOpsChanged: (cb: () => void) => window.api.on(CH.opsChanged, () => cb()),

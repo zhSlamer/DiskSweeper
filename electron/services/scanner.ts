@@ -153,7 +153,7 @@ function onWorkerMessage(st: ScanState, w: Worker, m: { t: string; [k: string]: 
     let links = 0
     for (const e of entries) {
       const [n, s, sd, mt, ct, at, f] = e
-      st.files.push({ id: st.files.length, p: dir + path.sep + n, n, ext: extOfName(n), s, sd, mt, ct, at, f })
+      st.files.push({ id: st.files.length, p: path.join(dir, n), n, ext: extOfName(n), s, sd, mt, ct, at, f })
       batchBytes += s
       if (f & 8) links++
       const extKey = extOfName(n)
@@ -202,7 +202,7 @@ function onWorkerMessage(st: ScanState, w: Worker, m: { t: string; [k: string]: 
       cur = st.dirs.get(cur.parent) || (cur.parent === '' ? undefined : undefined)
     }
     for (const name of subdirs) {
-      const childPath = dir + path.sep + name
+      const childPath = path.join(dir, name)
       if (!st.dirs.has(childPath)) {
         st.dirs.set(childPath, newAgg(childPath, 0, st.root))
       }

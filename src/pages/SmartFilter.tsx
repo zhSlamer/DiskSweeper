@@ -393,7 +393,7 @@ export default function SmartFilter(): React.ReactElement {
                         title="打开所在位置"
                         onClick={(e) => {
                           e.stopPropagation()
-                          void api.reveal(r.p)
+                          void api.reveal(r.p).then((ok) => { if (!ok) void message.warning("文件不存在或已变化，请重新扫描后再试") })
                         }}
                       />
                     )

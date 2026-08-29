@@ -1,4 +1,5 @@
 import { BrowserWindow, clipboard, dialog, ipcMain, app } from 'electron'
+import { promises as fsp } from 'node:fs'
 import { CH } from '../shared/ipc-channels'
 import { isProtectedPath } from '../shared/constants'
 import type {
@@ -151,7 +152,16 @@ export function registerIpc(): void {
     if (ok) send(CH.opsChanged, null)
     return ok
   })
-  ipcMain.handle(CH.opsReveal, (_e, p: string) => ops.revealInExplorer(p))
+  ipcMain.handle(CH.opsReveal, async (_e, p: string) => {
+    // showItemInFolder 无返回值且对无效路径静默失败，先校验存在性让前端可提示
+    try {
+      await fsp.stat(p)
+    } catch {
+      return false
+    }
+    await ops.revealInExplorer(p)
+    return true
+  })
   ipcMain.handle(CH.opsOpen, (_e, p: string) => ops.openPath(p))
   ipcMain.handle(CH.opsClipboard, (_e, p: string) => {
     clipboard.writeText(p)

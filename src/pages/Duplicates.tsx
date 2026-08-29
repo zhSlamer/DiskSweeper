@@ -366,7 +366,7 @@ function DupGroupCard({
             type="text"
             size="small"
             icon={<AimOutlined />}
-            onClick={() => void api.reveal(it.p)}
+            onClick={() => void api.reveal(it.p).then((ok) => { if (!ok) void message.warning("文件不存在或已变化，请重新查重后再试") })}
           />
         </div>
       ))}
